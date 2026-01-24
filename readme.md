@@ -1,6 +1,20 @@
 # FLABS - Satellite
 
-北海道立総合研究機構のページ
+
+```                                              
+  # GEE版の実行                                          
+  source venv/bin/activate                               
+  python kipipiri_flabs.py                               
+                                                         
+  # Open-Meteo版の実行                                   
+  python kipipiri_flabs_openmeteo.py                     
+                                                         
+  GEE版はCHIRPS（降水量専用の高精度衛星データ）とERA5-Lan
+  d（気温）を使用しており、Open-Meteo版より精度が高いデー
+  タソースを利用しています。
+```
+
+#### 北海道立総合研究機構のページ
 [http://www.agri.hro.or.jp/boujosho/flabs/area.html](http://www.agri.hro.or.jp/boujosho/flabs/area.html)
 
 
