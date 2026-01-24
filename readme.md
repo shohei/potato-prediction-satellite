@@ -1,5 +1,7 @@
 # FLABS - Satellite
 
+北海道立総合研究機構のページ
+[http://www.agri.hro.or.jp/boujosho/flabs/area.html](http://www.agri.hro.or.jp/boujosho/flabs/area.html)
 
 
 ## Ⅰ．FLABSとは
@@ -27,8 +29,6 @@ FLABSの計算は各地の作況ほにおける萌芽日を利用して行って
   
 ##「感染好適指数」の計算方法
 
-
-[http://www.agri.hro.or.jp/boujosho/flabs/area.html](http://www.agri.hro.or.jp/boujosho/flabs/area.html)
 
 
 ①　１日の平均気温が26.6℃未満でかつ最低気温が7.2℃以上の場合、以下の区分に従って感染好適指数を割り当てる。
