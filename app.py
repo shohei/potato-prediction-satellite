@@ -46,13 +46,14 @@ def initialize_earth_engine():
     # 方法1: Streamlit Secretsからサービスアカウント認証（Streamlit Cloud用）
     if 'gee_service_account' in st.secrets:
         try:
-            service_account = st.secrets['gee_service_account']['client_email']
-            private_key = st.secrets['gee_service_account']['private_key']
+            # AttrDictを通常のdictに変換してからJSONに変換
+            service_account_info = dict(st.secrets['gee_service_account'])
+            service_account_email = service_account_info['client_email']
 
             # サービスアカウントの認証情報を作成
             credentials = ee.ServiceAccountCredentials(
-                service_account,
-                key_data=st.secrets['gee_service_account']
+                service_account_email,
+                key_data=json.dumps(service_account_info)
             )
             ee.Initialize(credentials=credentials, project=GEE_PROJECT_ID)
             return True, "GEE initialized with service account"
