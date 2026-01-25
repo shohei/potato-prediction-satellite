@@ -65,3 +65,7 @@ FLABSの計算は各地の作況ほにおける萌芽日を利用して行って
 https://flabs-satellite.streamlit.app/
 
 ![](image/st_app.png)
+
+## TODO
+感染好適指数の累積値が２１に達した日を「危険期到達日」、その2週間後を「予測初発日」としてハイライトする。
+
