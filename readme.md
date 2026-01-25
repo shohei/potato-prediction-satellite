@@ -66,7 +66,3 @@ https://flabs-satellite.streamlit.app/
 
 ![](image/st_app.png)
 
-## TODO
-- 感染好適指数の累積値が２１に達した日を「危険期到達日」、その2週間後を「予測初発日」としてハイライトする。
-- モバイルでpatameterの設定パネルが見えない問題の修正
-
