@@ -24,7 +24,7 @@ import json
 
 # ページ設定
 st.set_page_config(
-    page_title="FLABS - Infection Index Calculator",
+    page_title="FLABS",
     page_icon="🦠",
     layout="wide"
 )
