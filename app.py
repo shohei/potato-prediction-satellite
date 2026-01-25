@@ -3,6 +3,12 @@ FLABS - Fasciola Infection Suitability Index Calculator
 Streamlit GUI Application
 
 Kenya Nyandarua County - Kipipiri地域の感染好適指数計算アプリ
+
+Streamlit Cloud デプロイ用設定:
+1. Google Cloud Consoleでサービスアカウントを作成
+2. Earth Engine APIを有効化
+3. サービスアカウントをEarth Engineに登録
+4. JSONキーをStreamlit Secretsに設定
 """
 
 import streamlit as st
@@ -13,6 +19,8 @@ from datetime import datetime, timedelta
 import plotly.express as px
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
+import json
+
 
 # ページ設定
 st.set_page_config(
@@ -27,17 +35,44 @@ GEE_PROJECT_ID = 'ee-shohei-2'
 
 @st.cache_resource
 def initialize_earth_engine():
-    """Google Earth Engineを初期化（キャッシュ）"""
+    """
+    Google Earth Engineを初期化（キャッシュ）
+
+    認証方法の優先順位:
+    1. Streamlit Secrets（サービスアカウント）- Streamlit Cloud用
+    2. 既存の認証情報（ローカル開発用）
+    3. インタラクティブ認証（ローカル開発用）
+    """
+    # 方法1: Streamlit Secretsからサービスアカウント認証（Streamlit Cloud用）
+    if 'gee_service_account' in st.secrets:
+        try:
+            service_account = st.secrets['gee_service_account']['client_email']
+            private_key = st.secrets['gee_service_account']['private_key']
+
+            # サービスアカウントの認証情報を作成
+            credentials = ee.ServiceAccountCredentials(
+                service_account,
+                key_data=st.secrets['gee_service_account']
+            )
+            ee.Initialize(credentials=credentials, project=GEE_PROJECT_ID)
+            return True, "GEE initialized with service account"
+        except Exception as e:
+            return False, f"Service account authentication failed: {str(e)}"
+
+    # 方法2: 既存の認証情報を使用（ローカル開発用）
     try:
         ee.Initialize(project=GEE_PROJECT_ID)
-        return True, "GEE initialized successfully"
+        return True, "GEE initialized with existing credentials"
     except Exception as e:
-        try:
-            ee.Authenticate()
-            ee.Initialize(project=GEE_PROJECT_ID)
-            return True, "GEE initialized after authentication"
-        except Exception as auth_error:
-            return False, f"GEE initialization failed: {str(auth_error)}"
+        pass
+
+    # 方法3: インタラクティブ認証（ローカル開発用）
+    try:
+        ee.Authenticate()
+        ee.Initialize(project=GEE_PROJECT_ID)
+        return True, "GEE initialized after authentication"
+    except Exception as auth_error:
+        return False, f"GEE initialization failed: {str(auth_error)}"
 
 
 def get_chirps_precipitation(start_date, end_date, lat, lon, buffer_radius):
@@ -332,7 +367,35 @@ def main():
 
     if not gee_status:
         st.error(f"❌ Google Earth Engine initialization failed: {gee_message}")
-        st.info("Please run `earthengine authenticate` in terminal first.")
+        with st.expander("🔧 Setup Instructions"):
+            st.markdown("""
+            ### For Local Development:
+            Run the following command in your terminal:
+            ```bash
+            earthengine authenticate
+            ```
+
+            ### For Streamlit Cloud:
+            1. Create a service account in [Google Cloud Console](https://console.cloud.google.com/)
+            2. Enable the Earth Engine API
+            3. Register the service account at [Earth Engine](https://code.earthengine.google.com/)
+            4. Download the JSON key and add it to Streamlit Secrets:
+
+            In your Streamlit Cloud app settings, add the following to **Secrets**:
+            ```toml
+            [gee_service_account]
+            type = "service_account"
+            project_id = "your-project-id"
+            private_key_id = "your-private-key-id"
+            private_key = "-----BEGIN PRIVATE KEY-----\\n...\\n-----END PRIVATE KEY-----\\n"
+            client_email = "your-service-account@your-project.iam.gserviceaccount.com"
+            client_id = "your-client-id"
+            auth_uri = "https://accounts.google.com/o/oauth2/auth"
+            token_uri = "https://oauth2.googleapis.com/token"
+            auth_provider_x509_cert_url = "https://www.googleapis.com/oauth2/v1/certs"
+            client_x509_cert_url = "https://www.googleapis.com/robot/v1/metadata/x509/your-service-account"
+            ```
+            """)
         return
 
     # メインコンテンツ
