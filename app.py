@@ -29,6 +29,44 @@ st.set_page_config(
     layout="wide"
 )
 
+# モバイル対応CSS
+st.markdown("""
+<style>
+/* Make sidebar accessible on mobile */
+@media (max-width: 768px) {
+    [data-testid="stSidebar"] {
+        min-width: 100% !important;
+        width: 100% !important;
+    }
+    [data-testid="stSidebar"][aria-expanded="true"] {
+        min-width: 100% !important;
+        width: 100% !important;
+    }
+    .main .block-container {
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+}
+/* Risk date highlight boxes */
+.risk-date-box {
+    background: linear-gradient(135deg, #ff6b6b 0%, #ee5a5a 100%);
+    color: white;
+    padding: 1rem;
+    border-radius: 10px;
+    margin: 0.5rem 0;
+    text-align: center;
+}
+.prediction-date-box {
+    background: linear-gradient(135deg, #ffa500 0%, #ff8c00 100%);
+    color: white;
+    padding: 1rem;
+    border-radius: 10px;
+    margin: 0.5rem 0;
+    text-align: center;
+}
+</style>
+""", unsafe_allow_html=True)
+
 # Google Earth Engine プロジェクトID
 GEE_PROJECT_ID = 'ee-shohei-2'
 
@@ -233,8 +271,26 @@ def calculate_infection_index(df):
     return data
 
 
-def create_time_series_plot(df):
-    """時系列グラフを作成"""
+def find_risk_dates(df, threshold=21):
+    """
+    危険期到達日（累積値が閾値に達した日）と予測初発日（2週間後）を検出
+
+    Returns:
+        tuple: (risk_date, prediction_date) または (None, None)
+    """
+    # 累積値が閾値以上になった最初の日を検出
+    risk_rows = df[df['cumulative_index'] >= threshold]
+
+    if len(risk_rows) > 0:
+        risk_date = risk_rows.iloc[0]['date']
+        prediction_date = risk_date + timedelta(days=14)
+        return risk_date, prediction_date
+
+    return None, None
+
+
+def create_time_series_plot(df, risk_date=None, prediction_date=None):
+    """時系列グラフを作成（危険期到達日・予測初発日のハイライト付き）"""
     fig = make_subplots(
         rows=4, cols=1,
         shared_xaxes=True,
@@ -250,6 +306,10 @@ def create_time_series_plot(df):
                    line=dict(color='red', width=2)),
         row=1, col=1
     )
+
+    # 閾値21の水平線を追加
+    fig.add_hline(y=21, line_dash="dash", line_color="green",
+                  annotation_text="Threshold (21)", row=1, col=1)
 
     # 日次指数
     fig.add_trace(
@@ -278,6 +338,44 @@ def create_time_series_plot(df):
                name='Precipitation', marker_color='steelblue'),
         row=4, col=1
     )
+
+    # 危険期到達日の垂直線（全サブプロットに追加）
+    if risk_date is not None:
+        # Pandas Timestampを文字列に変換
+        risk_date_str = risk_date.strftime('%Y-%m-%d') if hasattr(risk_date, 'strftime') else str(risk_date)
+        for row in range(1, 5):
+            fig.add_vline(
+                x=risk_date_str, line_dash="solid", line_color="red", line_width=2,
+                row=row, col=1
+            )
+        # 最初のサブプロットにのみアノテーションを追加
+        fig.add_annotation(
+            x=risk_date_str, y=1, yref="y domain",
+            text="Risk Date", showarrow=False,
+            font=dict(color="red", size=10),
+            xanchor="left", yanchor="top",
+            row=1, col=1
+        )
+
+    # 予測初発日の垂直線（全サブプロットに追加）
+    if prediction_date is not None:
+        # Pandas Timestampを文字列に変換
+        prediction_date_str = prediction_date.strftime('%Y-%m-%d') if hasattr(prediction_date, 'strftime') else str(prediction_date)
+        # データの日付範囲内かチェック
+        if prediction_date <= df['date'].max():
+            for row in range(1, 5):
+                fig.add_vline(
+                    x=prediction_date_str, line_dash="dash", line_color="orange", line_width=2,
+                    row=row, col=1
+                )
+            # 最初のサブプロットにのみアノテーションを追加
+            fig.add_annotation(
+                x=prediction_date_str, y=0.85, yref="y domain",
+                text="Predicted Onset", showarrow=False,
+                font=dict(color="orange", size=10),
+                xanchor="left", yanchor="top",
+                row=1, col=1
+            )
 
     fig.update_layout(
         height=800,
@@ -463,6 +561,30 @@ def main():
     if 'result' in st.session_state:
         result = st.session_state['result']
 
+        # 危険期到達日と予測初発日を検出
+        risk_date, prediction_date = find_risk_dates(result, threshold=21)
+
+        # Display Risk Threshold Date and Predicted Onset Date
+        if risk_date is not None:
+            st.subheader("🚨 Risk Alert")
+            col_risk1, col_risk2 = st.columns(2)
+            with col_risk1:
+                st.markdown(f"""
+                <div class="risk-date-box">
+                    <h3 style="margin:0;">Risk Threshold Date</h3>
+                    <h2 style="margin:0.5rem 0;">{risk_date.strftime('%Y-%m-%d')}</h2>
+                    <p style="margin:0;font-size:0.9em;">Cumulative index reached 21</p>
+                </div>
+                """, unsafe_allow_html=True)
+            with col_risk2:
+                st.markdown(f"""
+                <div class="prediction-date-box">
+                    <h3 style="margin:0;">Predicted Onset Date</h3>
+                    <h2 style="margin:0.5rem 0;">{prediction_date.strftime('%Y-%m-%d')}</h2>
+                    <p style="margin:0;font-size:0.9em;">2 weeks after risk threshold</p>
+                </div>
+                """, unsafe_allow_html=True)
+
         # サマリー統計
         st.subheader("📈 Summary Statistics")
         col1, col2, col3, col4 = st.columns(4)
@@ -489,7 +611,7 @@ def main():
 
         # 時系列グラフ
         st.subheader("📉 Time Series")
-        fig_ts = create_time_series_plot(result)
+        fig_ts = create_time_series_plot(result, risk_date, prediction_date)
         st.plotly_chart(fig_ts, use_container_width=True)
 
         # 月別サマリー
@@ -531,6 +653,72 @@ def main():
     else:
         # 初期画面
         st.info("👈 Configure parameters in the sidebar and click **Run Analysis** to start.")
+
+        # モバイル用パラメータ設定（メインエリア）
+        with st.expander("📱 Parameters (Mobile)", expanded=False):
+            st.markdown("*This section is for mobile users who cannot access the sidebar.*")
+
+            st.subheader("📍 Location")
+            mobile_presets = {
+                "Kipipiri, Kenya": (-0.4167, 36.5833),
+                "Custom": None
+            }
+            mobile_selected = st.selectbox("Select location", list(mobile_presets.keys()), key="mobile_preset")
+
+            if mobile_selected == "Custom":
+                mobile_lat = st.number_input("Latitude", value=-0.4167, format="%.4f", key="mobile_lat")
+                mobile_lon = st.number_input("Longitude", value=36.5833, format="%.4f", key="mobile_lon")
+            else:
+                mobile_lat, mobile_lon = mobile_presets[mobile_selected]
+                st.info(f"Lat: {mobile_lat}, Lon: {mobile_lon}")
+
+            mobile_buffer = st.slider("Buffer radius (m)", 1000, 20000, 5000, 1000, key="mobile_buffer")
+
+            st.subheader("📅 Analysis Period")
+            mobile_default_end = datetime.now() - timedelta(days=7)
+            mobile_default_start = mobile_default_end - timedelta(days=365)
+
+            mobile_col1, mobile_col2 = st.columns(2)
+            with mobile_col1:
+                mobile_start = st.date_input("Start date", value=mobile_default_start, key="mobile_start")
+            with mobile_col2:
+                mobile_end = st.date_input("End date", value=mobile_default_end, key="mobile_end")
+
+            if st.button("🚀 Run Analysis", type="primary", use_container_width=True, key="mobile_run"):
+                # モバイル版の解析実行
+                start_str = mobile_start.strftime('%Y-%m-%d')
+                end_str = mobile_end.strftime('%Y-%m-%d')
+
+                st.header("📊 Analysis Results")
+                st.markdown(f"**Location**: ({mobile_lat}, {mobile_lon}) | **Period**: {start_str} to {end_str}")
+
+                progress_bar = st.progress(0)
+                status_text = st.empty()
+
+                try:
+                    status_text.text("Fetching CHIRPS precipitation data...")
+                    progress_bar.progress(10)
+                    df_precip = get_chirps_precipitation(start_str, end_str, mobile_lat, mobile_lon, mobile_buffer)
+                    progress_bar.progress(40)
+
+                    status_text.text("Fetching ERA5-Land temperature data...")
+                    df_temp = get_era5_temperature(start_str, end_str, mobile_lat, mobile_lon, mobile_buffer)
+                    progress_bar.progress(70)
+
+                    status_text.text("Merging data...")
+                    df = pd.merge(df_precip, df_temp, on='date', how='inner')
+                    progress_bar.progress(80)
+
+                    status_text.text("Calculating infection suitability index...")
+                    result = calculate_infection_index(df)
+                    progress_bar.progress(100)
+                    status_text.text("✅ Analysis complete!")
+
+                    st.session_state['result'] = result
+                    st.rerun()
+
+                except Exception as e:
+                    st.error(f"❌ Error during analysis: {str(e)}")
 
         # 使い方の説明
         with st.expander("📖 How to use this application"):
