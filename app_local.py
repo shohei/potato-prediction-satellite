@@ -109,9 +109,19 @@ def get_era5_temperature(start_date, end_date, lat, lon, buffer_radius):
 
 
 def calculate_infection_index(df):
-    """感染好適指数を計算"""
+    """
+    感染好適指数を計算
+
+    ルール:
+    ① 基本ルール: 平均気温26.6未満 かつ 最低気温7.2以上の場合、表に基づき指数を決定
+    ② 微雨補正: 指数が0でも、当日0.5mm以上の雨があり、平均気温>=7.2なら指数1
+    ③ 例外ルール: 最低気温が7.2未満でも、前5日雨量>=30かつ平均>=7.2なら指数2
+    ④ 累積値リセット: 累積値が5以下 かつ 前10日間の降水量が0なら、累積値を0にする
+    ⑤ 高温リセット: 平均気温が26.6℃以上の日は、それまでの累積値を0に戻す
+    """
     data = df.copy()
 
+    # 過去の降水量の合計を計算（当日を含まない）
     data['precip_5days_sum'] = data['precip'].shift(1).rolling(window=5, min_periods=1).sum().fillna(0)
     data['precip_10days_sum'] = data['precip'].shift(1).rolling(window=10, min_periods=1).sum().fillna(0)
 
@@ -130,20 +140,26 @@ def calculate_infection_index(df):
 
         daily_idx = 0
 
+        # 欠損値チェック
         if pd.isna(t_avg) or pd.isna(t_min):
             data.at[data.index[i], 'daily_index'] = np.nan
             data.at[data.index[i], 'cumulative_index'] = cumulative_value
             continue
 
+        # ⑤ 平均気温が26.6℃以上の日は、それまでの累積値を0に戻す
         if t_avg >= 26.6:
-            daily_idx = 0
             cumulative_value = 0
+            daily_idx = 0
         else:
+            # ③ 例外ルール: 最低気温が7.2未満でも、前5日雨量>=30かつ平均>=7.2なら指数2
             if t_min < 7.2 and p_5sum >= 30.0 and t_avg >= 7.2:
                 daily_idx = 2
-            elif t_avg < 26.6 and t_min >= 7.2:
+
+            # ① 基本ルール: 平均気温26.6未満 かつ 最低気温7.2以上
+            elif t_min >= 7.2:
                 base_idx = 0
-                col_idx = 0
+
+                # 降水量区分の判定
                 if p_5sum < 5.0:
                     col_idx = 0
                 elif p_5sum < 10.5:
@@ -155,6 +171,7 @@ def calculate_infection_index(df):
                 else:
                     col_idx = 4
 
+                # 気温区分の判定
                 if 15.1 <= t_avg <= 26.5:
                     scores = [0, 1, 2, 2, 3]
                     base_idx = scores[col_idx]
@@ -164,16 +181,17 @@ def calculate_infection_index(df):
                 elif 7.2 <= t_avg <= 11.6:
                     scores = [0, 0, 0, 2, 2]
                     base_idx = scores[col_idx]
-                else:
-                    base_idx = 0
 
                 daily_idx = base_idx
 
+                # ② 微雨補正: 指数が0でも、当日0.5mm以上の雨があり、平均気温>=7.2なら指数1
                 if daily_idx == 0 and p_day >= 0.5 and t_avg >= 7.2:
                     daily_idx = 1
 
+            # 累積値に当日の指数を加算
             cumulative_value += daily_idx
 
+            # ④ 累積値が5以下 かつ 前10日間の降水量が0なら、累積値を0にする
             if cumulative_value <= 5 and p_10sum == 0:
                 cumulative_value = 0
 
@@ -453,5 +471,22 @@ def main():
             """)
 
 
+def show_footer():
+    """フッターを表示"""
+    st.markdown("---")
+    st.markdown(
+        """
+        <div style="text-align: center; color: #888; font-size: 0.8em;">
+        © 2026 Shohei Aoki. All rights reserved.<br>
+        <span style="font-size: 0.9em;">Jomo Kenyatta University of Agriculture and Technology</span><br>
+        <span style="font-size: 0.85em;">Contact: aoki [at] jkuat.ac.ke</span><br>
+        <a href="https://github.com/shohei/flabs-satellite" target="_blank" style="color: #888;">GitHub</a>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+
 if __name__ == "__main__":
     main()
+    show_footer()
