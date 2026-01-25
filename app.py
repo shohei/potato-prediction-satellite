@@ -29,24 +29,9 @@ st.set_page_config(
     layout="wide"
 )
 
-# モバイル対応CSS
+# Custom CSS
 st.markdown("""
 <style>
-/* Make sidebar accessible on mobile */
-@media (max-width: 768px) {
-    [data-testid="stSidebar"] {
-        min-width: 100% !important;
-        width: 100% !important;
-    }
-    [data-testid="stSidebar"][aria-expanded="true"] {
-        min-width: 100% !important;
-        width: 100% !important;
-    }
-    .main .block-container {
-        padding-left: 1rem;
-        padding-right: 1rem;
-    }
-}
 /* Risk date highlight boxes */
 .risk-date-box {
     background: linear-gradient(135deg, #ff6b6b 0%, #ee5a5a 100%);
@@ -437,13 +422,12 @@ def main():
     using satellite-derived weather data (CHIRPS precipitation + ERA5-Land temperature).
     """)
 
-    # サイドバー - パラメータ設定
+    # サイドバー - パラメータ設定（PC用）
     with st.sidebar:
         st.header("⚙️ Parameters")
 
         st.subheader("📍 Location")
 
-        # プリセット地点
         presets = {
             "Kipipiri, Kenya": (-0.4167, 36.5833),
             "Custom": None
@@ -461,7 +445,6 @@ def main():
 
         st.subheader("📅 Analysis Period")
 
-        # デフォルト期間（過去1年）
         default_end = datetime.now() - timedelta(days=7)
         default_start = default_end - timedelta(days=365)
 
@@ -654,9 +637,9 @@ def main():
         # 初期画面
         st.info("👈 Configure parameters in the sidebar and click **Run Analysis** to start.")
 
-        # モバイル用パラメータ設定（メインエリア）
-        with st.expander("📱 Parameters (Mobile)", expanded=False):
-            st.markdown("*This section is for mobile users who cannot access the sidebar.*")
+        # モバイル用パラメータ設定（エクスパンダー）
+        with st.expander("📱 Parameters (for Mobile)", expanded=False):
+            st.markdown("*Use this section on mobile devices where the sidebar is not easily accessible.*")
 
             st.subheader("📍 Location")
             mobile_presets = {
@@ -666,8 +649,11 @@ def main():
             mobile_selected = st.selectbox("Select location", list(mobile_presets.keys()), key="mobile_preset")
 
             if mobile_selected == "Custom":
-                mobile_lat = st.number_input("Latitude", value=-0.4167, format="%.4f", key="mobile_lat")
-                mobile_lon = st.number_input("Longitude", value=36.5833, format="%.4f", key="mobile_lon")
+                mobile_col_loc1, mobile_col_loc2 = st.columns(2)
+                with mobile_col_loc1:
+                    mobile_lat = st.number_input("Latitude", value=-0.4167, format="%.4f", key="mobile_lat")
+                with mobile_col_loc2:
+                    mobile_lon = st.number_input("Longitude", value=36.5833, format="%.4f", key="mobile_lon")
             else:
                 mobile_lat, mobile_lon = mobile_presets[mobile_selected]
                 st.info(f"Lat: {mobile_lat}, Lon: {mobile_lon}")
@@ -685,7 +671,6 @@ def main():
                 mobile_end = st.date_input("End date", value=mobile_default_end, key="mobile_end")
 
             if st.button("🚀 Run Analysis", type="primary", use_container_width=True, key="mobile_run"):
-                # モバイル版の解析実行
                 start_str = mobile_start.strftime('%Y-%m-%d')
                 end_str = mobile_end.strftime('%Y-%m-%d')
 
