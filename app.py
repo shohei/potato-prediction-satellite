@@ -24,8 +24,8 @@ import json
 
 # ページ設定
 st.set_page_config(
-    page_title="FLABS",
-    page_icon="🦠",
+    page_title="FLABS Potao Infection Index Calculator",
+    page_icon="🥔",
     layout="wide"
 )
 
@@ -315,9 +315,9 @@ def create_monthly_summary_plot(df):
 
 # メインアプリ
 def main():
-    st.title("🦠 FLABS - Fasciola Infection Suitability Index Calculator")
+    st.title("🥔 FLABS - Potato Infection Index Calculator")
     st.markdown("""
-    This application calculates the **Fasciola (Liver Fluke) infection suitability index**
+    This application calculates the infection suitability index
     using satellite-derived weather data (CHIRPS precipitation + ERA5-Land temperature).
     """)
 
