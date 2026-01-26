@@ -1028,7 +1028,7 @@ def main():
     st.title("🥔 Potato Disease & Yield Prediction from Satellite Data")
 
     # Create tabs
-    tab1, tab2 = st.tabs(["🦠 FLABS - Infection Index", "🌱 LINTUL - Yield Prediction"])
+    tab1, tab2 = st.tabs(["🦠 FLABS - Infection Index", "🌱 LINTUL-POTATO-DSS - Yield Prediction"])
 
     with tab1:
         run_flabs_tab()
