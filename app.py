@@ -3,7 +3,7 @@ Potato Disease & Yield Prediction System
 Integrated Streamlit Application
 
 Features:
-1. FLABS - Fasciola Infection Suitability Index Calculator
+1. FLABS - Potato Infection Suitability Index Calculator
 2. LINTUL-POTATO-DSS - Potato Potential Yield Prediction Model
 """
 
@@ -652,7 +652,7 @@ def create_lintul_results_charts(results: dict) -> go.Figure:
 def run_flabs_tab():
     """FLABS Tab Content"""
     st.markdown("""
-    This tool calculates the **Fasciola (Liver Fluke) infection suitability index**
+    This tool calculates the potato infection suitability index
     using satellite-derived weather data (CHIRPS precipitation + ERA5-Land temperature).
     """)
 
@@ -857,11 +857,11 @@ def run_flabs_tab():
         with st.expander("📖 About FLABS"):
             st.markdown("""
             ### About the Infection Index
-            The Fasciola (Liver Fluke) infection suitability index is calculated based on:
+            The potato infection suitability index is calculated based on:
             - **Temperature**: Average and minimum daily temperature
             - **Precipitation**: Daily and cumulative (5-day, 10-day) rainfall
 
-            Higher cumulative index values indicate more favorable conditions for Fasciola transmission.
+            Higher cumulative index values indicate more favorable conditions for infection transmission.
             """)
 
 
