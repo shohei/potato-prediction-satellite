@@ -1,5 +1,5 @@
 """
-Potato Disease & Yield Prediction System
+Potato Disease & Yield Prediction System using Satellite Data
 Integrated Streamlit Application
 
 Features:
