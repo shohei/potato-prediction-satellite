@@ -1025,7 +1025,7 @@ def run_lintul_tab():
 
 
 def main():
-    st.title("🥔 Potato Disease & Yield Prediction System")
+    st.title("🥔 Potato Disease & Yield Prediction from Satellite Data")
 
     # Create tabs
     tab1, tab2 = st.tabs(["🦠 FLABS - Infection Index", "🌱 LINTUL - Yield Prediction"])
