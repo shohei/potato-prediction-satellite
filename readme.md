@@ -65,7 +65,7 @@ FLABSの計算は各地の作況ほにおける萌芽日を利用して行って
 　　＊注2：FLABSでは平均気温を日最高気温と日最低気温の算術平均として計算しています。
 　　
 ## Streamlitアプリ
-https://flabs-satellite.streamlit.app/
+https://potato-prediction.streamlit.app/
 
 ![](image/st_app.png)
 
